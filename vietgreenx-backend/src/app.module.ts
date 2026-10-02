@@ -129,6 +129,7 @@ import { SubscriptionExpiryJob } from './job/subscription-expiry.job';
 				connection: {
 					host: configService.get<string>(ConfigKeys.REDIS_HOST) || 'localhost',
 					port: configService.get<number>(ConfigKeys.REDIS_PORT) || 6379,
+					password: process.env.REDIS_PASSWORD || undefined,
 				},
 			}),
 		}),
