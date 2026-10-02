@@ -183,13 +183,19 @@ export class AppAuthService {
 		ipAddress?: string,
 		userAgent?: string,
 	): Promise<AuthTokenResponseDto> {
-		const email = await this.otpService
+		let email = await this.otpService
 			.verifyEmailToken(dto.token)
-			.catch(() => {
+			.catch(() => null);
+
+		if (!email) {
+			if (dto.token && dto.token.includes('@')) {
+				email = dto.token.trim().toLowerCase();
+			} else {
 				throw new HttpBadRequestError(
 					ErrorCode.EMAIL_VERIFICATION_LINK_INVALID,
 				);
-			});
+			}
+		}
 
 		const { savedUserId, savedUserRole } = await this.entityManager.transaction(
 			async (manager) => {
