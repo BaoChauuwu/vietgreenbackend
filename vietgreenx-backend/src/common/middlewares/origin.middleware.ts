@@ -32,6 +32,10 @@ export class OriginMiddleware implements NestMiddleware {
 					}
 				});
 
+			if (!allowedReferer.length || allowedReferer.includes('*')) {
+				return next();
+			}
+
 			const isAllowedOrigin = isAllowed(origin);
 			const isAllowedReferer = isAllowed(referer);
 
