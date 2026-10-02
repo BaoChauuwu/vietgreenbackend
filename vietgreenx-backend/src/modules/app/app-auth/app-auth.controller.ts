@@ -44,7 +44,7 @@ export class AppAuthController {
 	constructor(private readonly appAuthService: AppAuthService) {}
 
 	@Post('register/phone')
-	@Throttle({ default: { limit: 5, ttl: 60000 } })
+	@Throttle({ default: { limit: 50, ttl: 60000 } })
 	@ApiOperation({ summary: '[PUBLIC] Register by phone — send OTP' })
 	@Responser.handle('Send OTP for registration')
 	@HttpCode(HttpStatus.OK)
@@ -54,7 +54,7 @@ export class AppAuthController {
 	}
 
 	@Post('register/phone/check-otp')
-	@Throttle({ default: { limit: 10, ttl: 60000 } })
+	@Throttle({ default: { limit: 50, ttl: 60000 } })
 	@ApiOperation({
 		summary: '[PUBLIC] Validate registration OTP without consuming it',
 	})
@@ -66,7 +66,7 @@ export class AppAuthController {
 	}
 
 	@Post('register/phone/verify')
-	@Throttle({ default: { limit: 10, ttl: 60000 } })
+	@Throttle({ default: { limit: 50, ttl: 60000 } })
 	@ApiOperation({ summary: '[PUBLIC] Verify OTP phone and create account' })
 	@Responser.handle('Verify OTP and create account')
 	@HttpCode(HttpStatus.CREATED)
