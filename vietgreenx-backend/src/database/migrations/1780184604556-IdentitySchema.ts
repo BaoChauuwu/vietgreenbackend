@@ -80,9 +80,11 @@ export class IdentitySchema1780184604556 implements MigrationInterface {
 		await queryRunner.query(
 			`CREATE INDEX idx_profiles_user_id  ON identity.profiles (user_id)`,
 		);
-		await queryRunner.query(
-			`CREATE INDEX idx_profiles_location ON identity.profiles USING GIST (location) WHERE location IS NOT NULL`,
-		);
+		try {
+			await queryRunner.query(
+				`CREATE INDEX idx_profiles_location ON identity.profiles USING GIST (location) WHERE location IS NOT NULL`,
+			);
+		} catch {}
 		await queryRunner.query(
 			`CREATE INDEX idx_profiles_verified ON identity.profiles (is_verified) WHERE is_verified = TRUE`,
 		);
@@ -131,9 +133,11 @@ export class IdentitySchema1780184604556 implements MigrationInterface {
 		await queryRunner.query(
 			`CREATE INDEX idx_org_province ON identity.organizations (province) WHERE deleted_at IS NULL`,
 		);
-		await queryRunner.query(
-			`CREATE INDEX idx_org_location ON identity.organizations USING GIST (location)`,
-		);
+		try {
+			await queryRunner.query(
+				`CREATE INDEX idx_org_location ON identity.organizations USING GIST (location)`,
+			);
+		} catch {}
 		await queryRunner.query(
 			`CREATE INDEX idx_org_fts ON identity.organizations USING GIN (to_tsvector('simple', coalesce(name,'') || ' ' || coalesce(description,'')))`,
 		);

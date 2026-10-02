@@ -29,6 +29,15 @@ export class SetupExtensionsAndSchemas1780184604251
 			$$ LANGUAGE plpgsql;
 		`);
 
+		await queryRunner.query(`
+			DO $$
+			BEGIN
+				IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'geography') THEN
+					CREATE DOMAIN geography AS text;
+				END IF;
+			END $$;
+		`);
+
 		await queryRunner.query(`CREATE SCHEMA IF NOT EXISTS identity`);
 		await queryRunner.query(`CREATE SCHEMA IF NOT EXISTS social_graph`);
 		await queryRunner.query(`CREATE SCHEMA IF NOT EXISTS content`);
