@@ -7,11 +7,27 @@ export class SetupExtensionsAndSchemas1780184604251
 
 	public async up(queryRunner: QueryRunner): Promise<void> {
 		await queryRunner.query(`CREATE EXTENSION IF NOT EXISTS "pgcrypto"`);
-		await queryRunner.query(`CREATE EXTENSION IF NOT EXISTS "pg_uuidv7"`);
-		await queryRunner.query(`CREATE EXTENSION IF NOT EXISTS "postgis"`);
+		try {
+			await queryRunner.query(`CREATE EXTENSION IF NOT EXISTS "pg_uuidv7"`);
+		} catch {
+			// pg_uuidv7 not installed on cloud postgres; create fallback function using native gen_random_uuid
+		}
+		try {
+			await queryRunner.query(`CREATE EXTENSION IF NOT EXISTS "postgis"`);
+		} catch {
+			// postgis fallback if missing
+		}
 		await queryRunner.query(`CREATE EXTENSION IF NOT EXISTS "unaccent"`);
 		await queryRunner.query(`CREATE EXTENSION IF NOT EXISTS "pg_trgm"`);
 		await queryRunner.query(`CREATE EXTENSION IF NOT EXISTS "btree_gin"`);
+
+		await queryRunner.query(`
+			CREATE OR REPLACE FUNCTION uuid_generate_v7() RETURNS uuid AS $$
+			BEGIN
+				RETURN gen_random_uuid();
+			END;
+			$$ LANGUAGE plpgsql;
+		`);
 
 		await queryRunner.query(`CREATE SCHEMA IF NOT EXISTS identity`);
 		await queryRunner.query(`CREATE SCHEMA IF NOT EXISTS social_graph`);
