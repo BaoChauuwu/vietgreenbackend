@@ -9,7 +9,7 @@ export class AddPhotoMediaIdsToReviews1783000000000
       ADD COLUMN IF NOT EXISTS photo_media_ids uuid[] NOT NULL DEFAULT '{}';
     `);
 		await queryRunner.query(`
-      ALTER TABLE agriculture.supplier_reviews
+      ALTER TABLE IF EXISTS agriculture.supplier_reviews
       ADD COLUMN IF NOT EXISTS photo_media_ids uuid[] NOT NULL DEFAULT '{}';
     `);
 	}
@@ -19,7 +19,7 @@ export class AddPhotoMediaIdsToReviews1783000000000
       ALTER TABLE agriculture.product_reviews DROP COLUMN IF EXISTS photo_media_ids;
     `);
 		await queryRunner.query(`
-      ALTER TABLE agriculture.supplier_reviews DROP COLUMN IF EXISTS photo_media_ids;
+      ALTER TABLE IF EXISTS agriculture.supplier_reviews DROP COLUMN IF EXISTS photo_media_ids;
     `);
 	}
 }

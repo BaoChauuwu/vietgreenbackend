@@ -36,7 +36,7 @@ export class AgricultureSchema1780184607650 implements MigrationInterface {
                 district             TEXT,
                 ward                 TEXT,
                 address_detail       TEXT,
-                location             geography(Point, 4326),
+                location             geography,
                 growing_zone_code    TEXT,
                 main_category_ids    UUID[]      NOT NULL DEFAULT '{}',
                 farm_area_ha         DECIMAL(10,2),
@@ -68,9 +68,16 @@ export class AgricultureSchema1780184607650 implements MigrationInterface {
 		await queryRunner.query(
 			`CREATE INDEX idx_gp_published ON agriculture.green_profiles (is_published) WHERE is_published = TRUE AND deleted_at IS NULL`,
 		);
-		await queryRunner.query(
-			`CREATE INDEX idx_gp_location  ON agriculture.green_profiles USING GIST (location)`,
-		);
+		const [{ installed: postgisInstalled }] = (await queryRunner.query(
+			`SELECT EXISTS (
+				SELECT 1 FROM pg_extension WHERE extname = 'postgis'
+			) AS installed`,
+		)) as { installed: boolean }[];
+		if (postgisInstalled) {
+			await queryRunner.query(
+				`CREATE INDEX idx_gp_location ON agriculture.green_profiles USING GIST (location)`,
+			);
+		}
 
 		await queryRunner.query(`
             CREATE TABLE agriculture.certifications (

@@ -676,7 +676,7 @@ export class AppAuthService {
 	async checkUsernameAvailability(
 		username: string,
 	): Promise<CheckUsernameResponseDto> {
-		const isTaken = await this.userRepository.exists({ where: { username } });
+		const isTaken = await this.userRepository.exists({ username });
 		return { available: !isTaken };
 	}
 }

@@ -20,11 +20,27 @@ export class GreenProfileRepository extends BaseRepository<GreenProfile> {
 		manager?: EntityManager,
 	): Promise<void> {
 		const runner = manager ? manager : this.greenProfileRepo;
+		const [{ installed: postgisInstalled }] = await runner.query<
+			{ installed: boolean }[]
+		>(
+			`SELECT EXISTS (
+				SELECT 1 FROM pg_extension WHERE extname = 'postgis'
+			) AS installed`,
+		);
+
+		if (postgisInstalled) {
+			await runner.query(
+				`UPDATE agriculture.green_profiles
+				 SET location = ST_SetSRID(ST_MakePoint($1, $2), 4326)
+				 WHERE id = $3`,
+				[longitude, latitude, id],
+			);
+			return;
+		}
+
 		await runner.query(
-			`UPDATE agriculture.green_profiles 
-			 SET location = ST_SetSRID(ST_MakePoint($1, $2), 4326) 
-			 WHERE id = $3`,
-			[longitude, latitude, id],
+			`UPDATE agriculture.green_profiles SET location = $1 WHERE id = $2`,
+			[JSON.stringify({ latitude, longitude }), id],
 		);
 	}
 
@@ -41,6 +57,34 @@ export class GreenProfileRepository extends BaseRepository<GreenProfile> {
 		if (!entity) return null;
 
 		const runner = manager ?? this.greenProfileRepo.manager;
+		const [{ installed: postgisInstalled }] = await runner.query<
+			{ installed: boolean }[]
+		>(
+			`SELECT EXISTS (
+				SELECT 1 FROM pg_extension WHERE extname = 'postgis'
+			) AS installed`,
+		);
+
+		if (!postgisInstalled) {
+			const [row] = await runner.query<{ location: string | null }[]>(
+				`SELECT location::text AS location
+				 FROM agriculture.green_profiles
+				 WHERE id = $1`,
+				[entity.id],
+			);
+			const location = row?.location
+				? (JSON.parse(row.location) as {
+						latitude: number;
+						longitude: number;
+					})
+				: null;
+
+			return Object.assign(entity, {
+				latitude: location?.latitude ?? null,
+				longitude: location?.longitude ?? null,
+			});
+		}
+
 		const [geo] = await runner.query<
 			{ lat: number | null; lng: number | null }[]
 		>(

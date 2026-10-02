@@ -65,7 +65,7 @@ export class IdentitySchema1780184604556 implements MigrationInterface {
                 province        TEXT,
                 district        TEXT,
                 ward            TEXT,
-                location        geography(Point, 4326),
+                location        geography,
                 is_verified     BOOLEAN     NOT NULL DEFAULT FALSE,
                 is_private      BOOLEAN     NOT NULL DEFAULT FALSE,
                 follower_count  INTEGER     NOT NULL DEFAULT 0 CHECK (follower_count >= 0),
@@ -80,11 +80,11 @@ export class IdentitySchema1780184604556 implements MigrationInterface {
 		await queryRunner.query(
 			`CREATE INDEX idx_profiles_user_id  ON identity.profiles (user_id)`,
 		);
-		try {
+		if (await this.hasPostgis(queryRunner)) {
 			await queryRunner.query(
 				`CREATE INDEX idx_profiles_location ON identity.profiles USING GIST (location) WHERE location IS NOT NULL`,
 			);
-		} catch {}
+		}
 		await queryRunner.query(
 			`CREATE INDEX idx_profiles_verified ON identity.profiles (is_verified) WHERE is_verified = TRUE`,
 		);
@@ -105,7 +105,7 @@ export class IdentitySchema1780184604556 implements MigrationInterface {
                 province              TEXT,
                 district              TEXT,
                 ward                  TEXT,
-                location              geography(Point, 4326),
+                location              geography,
                 description           TEXT,
                 logo_media_id         UUID,
                 cover_media_id        UUID,
@@ -133,11 +133,11 @@ export class IdentitySchema1780184604556 implements MigrationInterface {
 		await queryRunner.query(
 			`CREATE INDEX idx_org_province ON identity.organizations (province) WHERE deleted_at IS NULL`,
 		);
-		try {
+		if (await this.hasPostgis(queryRunner)) {
 			await queryRunner.query(
 				`CREATE INDEX idx_org_location ON identity.organizations USING GIST (location)`,
 			);
-		} catch {}
+		}
 		await queryRunner.query(
 			`CREATE INDEX idx_org_fts ON identity.organizations USING GIN (to_tsvector('simple', coalesce(name,'') || ' ' || coalesce(description,'')))`,
 		);
@@ -323,6 +323,15 @@ export class IdentitySchema1780184604556 implements MigrationInterface {
 		await queryRunner.query(
 			`CREATE INDEX idx_fcm_user ON identity.fcm_devices (user_id) WHERE is_active = TRUE`,
 		);
+	}
+
+	private async hasPostgis(queryRunner: QueryRunner): Promise<boolean> {
+		const [{ installed }] = (await queryRunner.query(
+			`SELECT EXISTS (
+				SELECT 1 FROM pg_extension WHERE extname = 'postgis'
+			) AS installed`,
+		)) as { installed: boolean }[];
+		return installed;
 	}
 
 	public async down(queryRunner: QueryRunner): Promise<void> {

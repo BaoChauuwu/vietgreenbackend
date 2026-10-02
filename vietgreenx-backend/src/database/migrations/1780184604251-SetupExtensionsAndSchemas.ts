@@ -7,15 +7,22 @@ export class SetupExtensionsAndSchemas1780184604251
 
 	public async up(queryRunner: QueryRunner): Promise<void> {
 		await queryRunner.query(`CREATE EXTENSION IF NOT EXISTS "pgcrypto"`);
-		try {
-			await queryRunner.query(`CREATE EXTENSION IF NOT EXISTS "pg_uuidv7"`);
-		} catch {
-			// pg_uuidv7 not installed on cloud postgres; create fallback function using native gen_random_uuid
-		}
-		try {
+
+		// Do not catch failed CREATE EXTENSION statements here. TypeORM runs this
+		// migration in a transaction, and PostgreSQL keeps the transaction aborted
+		// even when the JavaScript error is caught. pg_uuidv7 is optional because the
+		// compatibility function below uses pgcrypto's gen_random_uuid().
+		const [{ available: postgisAvailable }] = (await queryRunner.query(
+			`SELECT EXISTS (
+				SELECT 1 FROM pg_available_extensions WHERE name = 'postgis'
+			) AS available`,
+		)) as { available: boolean }[];
+		if (postgisAvailable) {
 			await queryRunner.query(`CREATE EXTENSION IF NOT EXISTS "postgis"`);
-		} catch {
-			// postgis fallback if missing
+		} else {
+			// Plain Railway PostgreSQL images do not always include PostGIS. A text
+			// domain keeps location optional; the repository provides JSON fallback.
+			await queryRunner.query(`CREATE DOMAIN geography AS text`);
 		}
 		await queryRunner.query(`CREATE EXTENSION IF NOT EXISTS "unaccent"`);
 		await queryRunner.query(`CREATE EXTENSION IF NOT EXISTS "pg_trgm"`);
@@ -27,15 +34,6 @@ export class SetupExtensionsAndSchemas1780184604251
 				RETURN gen_random_uuid();
 			END;
 			$$ LANGUAGE plpgsql;
-		`);
-
-		await queryRunner.query(`
-			DO $$
-			BEGIN
-				IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'geography') THEN
-					CREATE DOMAIN geography AS text;
-				END IF;
-			END $$;
 		`);
 
 		await queryRunner.query(`CREATE SCHEMA IF NOT EXISTS identity`);
