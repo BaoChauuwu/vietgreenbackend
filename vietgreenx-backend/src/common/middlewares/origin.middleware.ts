@@ -19,10 +19,10 @@ export class OriginMiddleware implements NestMiddleware {
 				this.configService.get('app.crossDomain.allowedReferer', {
 					infer: true,
 				}) ?? [];
-			// Use exact-prefix matching (protocol + host) to prevent subdomain-lookalike bypass.
 			const isAllowed = (field: string | undefined) =>
 				!field ||
 				allowedReferer.some((allowed) => {
+					if (allowed === '*') return true;
 					try {
 						const fieldHost = new URL(field).origin;
 						const allowedHost = new URL(allowed).origin;
