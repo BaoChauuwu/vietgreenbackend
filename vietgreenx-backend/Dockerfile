@@ -24,6 +24,7 @@ RUN npm run build
 # ── Production ────────────────────────────────────────────────────────────
 FROM base AS production
 ENV NODE_ENV=production
+ENV EMBEDDED_REDIS=true
 ENV REDIS_HOST=127.0.0.1
 ENV REDIS_PORT=6379
 
@@ -32,4 +33,4 @@ COPY --from=builder /app/dist ./dist
 COPY package*.json ./
 
 EXPOSE 9000
-CMD ["dumb-init", "sh", "-c", "redis-server --daemonize yes && exec node dist/main.js"]
+CMD ["dumb-init", "node", "dist/main.js"]

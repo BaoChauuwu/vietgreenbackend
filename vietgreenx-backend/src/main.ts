@@ -15,8 +15,31 @@ import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ConfigKeys } from './config/config-key.enum';
 import { useContainer } from 'class-validator';
+import { spawnSync } from 'child_process';
+
+function startEmbeddedRedis() {
+	if (process.env.EMBEDDED_REDIS !== 'true') {
+		return;
+	}
+
+	const host = '127.0.0.1';
+	const port = process.env.REDIS_PORT || '6379';
+	process.env.REDIS_HOST = host;
+	process.env.REDIS_PORT = port;
+
+	const result = spawnSync(
+		'redis-server',
+		['--daemonize', 'yes', '--bind', host, '--port', port],
+		{ stdio: 'inherit' },
+	);
+
+	if (result.error || result.status !== 0) {
+		throw result.error ?? new Error(`redis-server exited with ${result.status}`);
+	}
+}
 
 async function bootstrap() {
+	startEmbeddedRedis();
 	const app = await NestFactory.create<NestExpressApplication>(AppModule);
 	app.enableCors();
 	useContainer(app.select(AppModule), { fallbackOnErrors: true });
