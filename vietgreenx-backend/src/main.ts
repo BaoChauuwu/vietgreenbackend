@@ -107,8 +107,9 @@ async function bootstrap() {
 		SwaggerModule.setup('api/docs', app, document);
 	}
 
-	const PORT =
-		configService.getOrThrow(ConfigKeys.APP_PORT, { infer: true }) || 3000;
+	const PORT = process.env.PORT
+		? parseInt(process.env.PORT, 10)
+		: configService.getOrThrow(ConfigKeys.APP_PORT, { infer: true }) || 3000;
 	await app.listen(PORT);
 
 	return configService;
