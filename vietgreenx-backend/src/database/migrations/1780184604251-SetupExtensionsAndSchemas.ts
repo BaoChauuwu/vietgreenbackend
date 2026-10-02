@@ -12,18 +12,21 @@ export class SetupExtensionsAndSchemas1780184604251
 		// migration in a transaction, and PostgreSQL keeps the transaction aborted
 		// even when the JavaScript error is caught. pg_uuidv7 is optional because the
 		// compatibility function below uses pgcrypto's gen_random_uuid().
-		const [{ available: postgisAvailable }] = (await queryRunner.query(
-			`SELECT EXISTS (
-				SELECT 1 FROM pg_available_extensions WHERE name = 'postgis'
-			) AS available`,
-		)) as { available: boolean }[];
-		if (postgisAvailable) {
-			await queryRunner.query(`CREATE EXTENSION IF NOT EXISTS "postgis"`);
-		} else {
-			// Plain Railway PostgreSQL images do not always include PostGIS. A text
-			// domain keeps location optional; the repository provides JSON fallback.
-			await queryRunner.query(`CREATE DOMAIN geography AS text`);
-		}
+		// Do not auto-install PostGIS: managed PostgreSQL can advertise it while
+		// denying CREATE EXTENSION to the application user. If PostGIS was installed
+		// by an administrator its geography type is reused; otherwise a text domain
+		// keeps locations portable and the repository provides a JSON fallback.
+		await queryRunner.query(`
+			DO $$
+			BEGIN
+				IF NOT EXISTS (
+					SELECT 1 FROM pg_type WHERE typname = 'geography'
+				) THEN
+					CREATE DOMAIN geography AS text;
+				END IF;
+			END
+			$$;
+		`);
 		await queryRunner.query(`CREATE EXTENSION IF NOT EXISTS "unaccent"`);
 		await queryRunner.query(`CREATE EXTENSION IF NOT EXISTS "pg_trgm"`);
 		await queryRunner.query(`CREATE EXTENSION IF NOT EXISTS "btree_gin"`);
