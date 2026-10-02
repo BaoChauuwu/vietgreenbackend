@@ -22,8 +22,17 @@ async function bootstrap() {
 	useContainer(app.select(AppModule), { fallbackOnErrors: true });
 
 	const redisIoAdapter = new RedisIoAdapter(app);
-	await redisIoAdapter.connectToRedis();
-	app.useWebSocketAdapter(redisIoAdapter);
+	try {
+		await redisIoAdapter.connectToRedis();
+		app.useWebSocketAdapter(redisIoAdapter);
+	} catch (error) {
+		const logger = new Logger('Bootstrap');
+		logger.warn(
+			`Redis unavailable; using the default in-memory WebSocket adapter: ${
+				error instanceof Error ? error.message : String(error)
+			}`,
+		);
+	}
 
 	app.set('trust proxy', 1);
 	app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));

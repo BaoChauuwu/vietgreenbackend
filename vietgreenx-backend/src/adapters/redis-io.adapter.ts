@@ -11,10 +11,23 @@ export class RedisIoAdapter extends IoAdapter {
 		const port = parseInt(process.env.REDIS_PORT || '6379', 10);
 		const password = process.env.REDIS_PASSWORD || undefined;
 
-		const pubClient = new Redis({ host, port, password, lazyConnect: true });
+		const pubClient = new Redis({
+			host,
+			port,
+			password,
+			lazyConnect: true,
+			connectTimeout: 5_000,
+			retryStrategy: () => null,
+		});
 		const subClient = pubClient.duplicate();
 
-		await Promise.all([pubClient.connect(), subClient.connect()]);
+		try {
+			await Promise.all([pubClient.connect(), subClient.connect()]);
+		} catch (error) {
+			pubClient.disconnect();
+			subClient.disconnect();
+			throw error;
+		}
 
 		this.adapterConstructor = createAdapter(pubClient, subClient);
 	}
