@@ -1,0 +1,96 @@
+import * as Sentry from '@sentry/node';
+import helmet from 'helmet';
+import { join } from 'path';
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from './app.module';
+import { NestExpressApplication } from '@nestjs/platform-express';
+import { RedisIoAdapter } from './adapters/redis-io.adapter';
+import { ConfigService } from '@nestjs/config';
+import { AllConfigType } from '@app/config/config.type';
+import { HttpExceptionFilter } from './common/filters/error.filter';
+import { Logger } from '@nestjs/common';
+import { TransformInterceptor } from './common/interceptors/transform.interceptor';
+import { ErrorInterceptor } from './common/interceptors/error.interceptor';
+import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { ConfigKeys } from './config/config-key.enum';
+import { useContainer } from 'class-validator';
+
+async function bootstrap() {
+	const app = await NestFactory.create<NestExpressApplication>(AppModule);
+	app.enableCors();
+	useContainer(app.select(AppModule), { fallbackOnErrors: true });
+
+	const redisIoAdapter = new RedisIoAdapter(app);
+	await redisIoAdapter.connectToRedis();
+	app.useWebSocketAdapter(redisIoAdapter);
+
+	app.set('trust proxy', 1);
+	app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
+	const configService = app.get(ConfigService<AllConfigType>);
+
+	Sentry.init({
+		dsn: configService.getOrThrow(ConfigKeys.SENTRY_DSN, { infer: true }),
+		environment: process.env.NODE_ENV || 'development',
+	});
+
+	app.useStaticAssets(join(__dirname, '..', 'public'), {
+		prefix: '/public/',
+	});
+
+	app.useStaticAssets(join(__dirname, '..', 'uploads'), {
+		prefix: '/uploads/',
+	});
+
+	app.setGlobalPrefix(
+		configService.getOrThrow(ConfigKeys.API_PREFIX, { infer: true }),
+		{
+			exclude: ['/'],
+		},
+	);
+
+	app.useGlobalFilters(new HttpExceptionFilter(configService));
+
+	app.useGlobalInterceptors(
+		new TransformInterceptor(),
+		new ErrorInterceptor(),
+		new LoggingInterceptor(),
+	);
+
+	const options = new DocumentBuilder()
+		.setTitle(configService.getOrThrow(ConfigKeys.APP_NAME, { infer: true }))
+		.setDescription('Rally System API')
+		.setVersion('1.0')
+		.addBearerAuth({
+			type: 'http',
+			description: 'Enter JWT token',
+			in: 'header',
+		})
+		.build();
+
+	const isProduction =
+		configService.get(ConfigKeys.NODE_ENV, { infer: true }) === 'production';
+	if (!isProduction) {
+		const document = SwaggerModule.createDocument(app, options);
+		SwaggerModule.setup('api/docs', app, document);
+	}
+
+	const PORT =
+		configService.getOrThrow(ConfigKeys.APP_PORT, { infer: true }) || 3000;
+	await app.listen(PORT);
+
+	return configService;
+}
+
+bootstrap().then((configService) => {
+	const logger = new Logger(AppModule.name);
+	const backendDomain = configService.getOrThrow(ConfigKeys.BACKEND_DOMAIN, {
+		infer: true,
+	});
+	const isProduction =
+		configService.get(ConfigKeys.NODE_ENV, { infer: true }) === 'production';
+	if (!isProduction) {
+		logger.log(`URL Swagger ${backendDomain}/api/docs`);
+	}
+	logger.log(`Starting on ${backendDomain}`);
+});

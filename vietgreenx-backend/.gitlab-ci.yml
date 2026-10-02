@@ -1,0 +1,15 @@
+stages:
+  - build
+  - deploy
+  - migrate
+  - database
+
+include:
+  - project: "vietgreenx/vietgreenx-gitlab-ci"
+    ref: main
+    file:
+      - "be/.install-dependencies.yml"
+      - "be/.build-be.yml"
+      - "be/.deploy-be.yml"
+      - "be/.migrate.yml"
+      - "be/.seed.yml"

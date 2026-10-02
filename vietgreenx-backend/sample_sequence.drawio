@@ -1,0 +1,79 @@
+<mxfile host="Electron" agent="Antigravity">
+  <diagram id="sample-sequence-diagram" name="Sequence Diagram - User Login">
+    <mxGraphModel dx="975" dy="597" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="900" pageHeight="500" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=16;fontStyle=1;fontColor=#1E293B;" value="SEQUENCE DIAGRAM: USER LOGIN (SAMPLE)" vertex="1">
+          <mxGeometry height="30" width="380" x="260" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="actor_user" parent="1" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;size=40;fontStyle=1;fillColor=#E0F2FE;strokeColor=#0284C7;fontColor=#0369A1;" value="User / Client" vertex="1">
+          <mxGeometry height="340" width="120" x="80" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="lifeline_fe" parent="1" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;size=40;fontStyle=1;fillColor=#FEF3C7;strokeColor=#D97706;fontColor=#B45309;" value="Frontend (React)" vertex="1">
+          <mxGeometry height="340" width="130" x="260" y="70" as="geometry" />
+        </mxCell>
+        <mxCell id="lifeline_be" parent="1" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;size=40;fontStyle=1;fillColor=#DCFCE7;strokeColor=#16A34A;fontColor=#15803D;" value="Backend API (Node/Nest)" vertex="1">
+          <mxGeometry height="340" width="150" x="490" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="lifeline_db" parent="1" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;size=40;fontStyle=1;fillColor=#F3E8FF;strokeColor=#9333EA;fontColor=#6B21A8;" value="Database (MongoDB)" vertex="1">
+          <mxGeometry height="340" width="140" x="710" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="msg1" edge="1" parent="1" source="actor_user" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;strokeColor=#0284C7;fontColor=#0F172A;fontSize=12;" target="lifeline_fe" value="1. Submit login form (email, password)">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="240" y="150" />
+            </Array>
+            <mxPoint x="140" y="150" as="sourcePoint" />
+            <mxPoint x="345" y="150" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="msg2" edge="1" parent="1" source="lifeline_fe" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;strokeColor=#D97706;fontColor=#0F172A;fontSize=12;" target="lifeline_be" value="2. POST /api/v1/auth/login">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="450" y="200" />
+            </Array>
+            <mxPoint x="345" y="200" as="sourcePoint" />
+            <mxPoint x="565" y="200" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="msg3" edge="1" parent="1" source="lifeline_be" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;strokeColor=#16A34A;fontColor=#0F172A;fontSize=12;" target="lifeline_db" value="3. findOne({ email })">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="670" y="250" />
+            </Array>
+            <mxPoint x="565" y="250" as="sourcePoint" />
+            <mxPoint x="780" y="250" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="msg4" edge="1" parent="1" source="lifeline_db" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;endSize=8;curved=0;rounded=0;strokeColor=#9333EA;fontColor=#0F172A;fontSize=12;" target="lifeline_be" value="4. Return user object + hashed pwd">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="670" y="290" />
+            </Array>
+            <mxPoint x="780" y="290" as="sourcePoint" />
+            <mxPoint x="565" y="290" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="msg5" edge="1" parent="1" source="lifeline_be" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;endSize=8;curved=0;rounded=0;strokeColor=#16A34A;fontColor=#0F172A;fontSize=12;" target="lifeline_fe" value="5. Verify pwd &amp; Return JWT Token">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="450" y="340" />
+            </Array>
+            <mxPoint x="565" y="340" as="sourcePoint" />
+            <mxPoint x="345" y="340" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="msg6" edge="1" parent="1" source="lifeline_fe" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;endSize=8;curved=0;rounded=0;strokeColor=#D97706;fontColor=#0F172A;fontSize=12;" target="actor_user" value="6. Store token &amp; Show Dashboard">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="240" y="380" />
+            </Array>
+            <mxPoint x="345" y="380" as="sourcePoint" />
+            <mxPoint x="140" y="380" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

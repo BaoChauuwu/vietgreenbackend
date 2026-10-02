@@ -1,0 +1,24 @@
+# Custom PostgreSQL image với đầy đủ extensions cho VietGreenX
+# Dùng Debian (không phải Alpine) vì Alpine thiếu llvm toolchain đầy đủ để build extensions
+# Extensions cần: pg_uuidv7, postgis, unaccent, pg_trgm, btree_gin, pgcrypto
+
+FROM postgres:16
+
+# Cài build tools + PostGIS + pg_uuidv7 dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git \
+    make \
+    gcc \
+    ca-certificates \
+    postgresql-server-dev-16 \
+    postgresql-16-postgis-3 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Cài pg_uuidv7 từ source — Debian có đầy đủ toolchain, không cần symlink
+RUN git clone --depth 1 https://github.com/fboulnois/pg_uuidv7.git /tmp/pg_uuidv7 \
+    && cd /tmp/pg_uuidv7 \
+    && make \
+    && make install \
+    && rm -rf /tmp/pg_uuidv7
+
+# unaccent, pg_trgm, btree_gin, pgcrypto đều là built-in — không cần cài thêm
